@@ -44,7 +44,7 @@ No external Python packages are required.
 Clone the repository:
 
 bash
-git clone https://github.com/YOUR-USERNAME/python-tcp-port-scanner.git
+git clone https://github.com/Wotie1/python-tcp-port-scanner.git
 
 
 Navigate to the project directory:
@@ -160,6 +160,6 @@ Before publishing, add an MIT LICENSE file to the repository.
 
 YOUR NAME
 
-GitHub: https://github.com/YOUR-USERNAME
+GitHub: https://github.com/Wotie1
 
 ⭐ If you find this project useful for learning Python networking, consider giving the repository a star.
