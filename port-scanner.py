@@ -1,28 +1,25 @@
 
 import socket
 import threading
+import ipaddress
 from queue import Queue
-from datetime import datetime
 
-target = input("Target IP (e.g., google.com): ")
-
-try:
-    target_ip = socket.gethostbyname(target)
-except socket.gaierror as e:
-    print(f"IP çözümleme hatası: {e}")
-    exit()
+TARGET_IP = "127.0.0.1"
+START_PORT = 1
+END_PORT = 1000
+THREAD_COUNT = 50
+TIMEOUT = 2
 
 print_lock = threading.Lock()
+q = Queue()
 
-print(f"Scanning: {target_ip}")
-print("-" * 50)
 
 def portscan(port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(2)
+    s.settimeout(TIMEOUT)
 
     try:
-        result = s.connect_ex((target_ip, port))
+        result = s.connect_ex((TARGET_IP, port))
 
         if result == 0:
             try:
@@ -31,11 +28,14 @@ def portscan(port):
                 service = "Bilinmeyen servis"
 
             with print_lock:
-                print(f"✅ Port {port} OPEN | Servis: {service}")
+                print(
+                    f"[OPEN] Port: {port} | "
+                    f"Servis: {service}"
+                )
 
     except socket.error as e:
         with print_lock:
-            print(f"❌ Port {port} hata: {e}")
+            print(f"[ERROR] Port {port}: {e}")
 
     finally:
         s.close()
@@ -51,17 +51,34 @@ def threader():
             q.task_done()
 
 
-q = Queue()
+def main():
+    global TARGET_IP
 
-for x in range(50):
-    t = threading.Thread(target=threader)
-    t.daemon = True
-    t.start()
+    try:
+        TARGET_IP = str(ipaddress.ip_address(TARGET_IP))
 
-for worker in range(1, 1001):
-    q.put(worker)
+        if not ipaddress.ip_address(TARGET_IP).is_loopback:
+            raise ValueError("Yalnızca localhost taranabilir.")
 
-q.join()
+    except ValueError as e:
+        print(f"Target error: {e}")
+        return
 
-print("-" * 50)
-print("Scanning Completed.")
+    print(f"Scanning: {TARGET_IP}")
+    print("-" * 50)
+
+    for _ in range(THREAD_COUNT):
+        t = threading.Thread(target=threader, daemon=True)
+        t.start()
+
+    for port in range(START_PORT, END_PORT + 1):
+        q.put(port)
+
+    q.join()
+
+    print("-" * 50)
+    print("Scanning Completed.")
+
+
+if __name__ == "__main__":
+    main()
